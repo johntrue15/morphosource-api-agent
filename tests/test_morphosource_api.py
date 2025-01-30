@@ -1,6 +1,7 @@
 import os
 import pytest
 import requests
+from urllib.parse import urljoin
 from typing import Dict, Optional
 
 class MorphoSourceAPI:
@@ -11,11 +12,14 @@ class MorphoSourceAPI:
             'Authorization': f'Bearer {self.api_token}' if self.api_token else None,
             'Accept': 'application/json'
         }
+        # Remove trailing slash if present for consistent URL joining
+        self.base_url = self.base_url.rstrip('/')
 
     def get_media(self, media_id: str) -> Dict:
         """Get individual media record"""
+        url = urljoin(f"{self.base_url}/", f"api/media/{media_id}")
         response = requests.get(
-            f"{self.base_url}/api/media/{media_id}",
+            url,
             headers=self.headers
         )
         response.raise_for_status()
@@ -23,8 +27,9 @@ class MorphoSourceAPI:
 
     def search_media(self, params: Optional[Dict] = None) -> Dict:
         """Search media records"""
+        url = urljoin(f"{self.base_url}/", "api/media")
         response = requests.get(
-            f"{self.base_url}/api/media",
+            url,
             headers=self.headers,
             params=params
         )
@@ -33,8 +38,9 @@ class MorphoSourceAPI:
 
     def get_physical_object(self, object_id: str) -> Dict:
         """Get individual physical object record"""
+        url = urljoin(f"{self.base_url}/", f"api/physical-objects/{object_id}")
         response = requests.get(
-            f"{self.base_url}/api/physical-objects/{object_id}",
+            url,
             headers=self.headers
         )
         response.raise_for_status()
@@ -47,6 +53,9 @@ class TestMorphoSourceAPI:
 
     def test_search_media(self, api):
         """Test basic media search functionality"""
+        # Mock the API URL to use the mock server for testing
+        api.base_url = "https://stoplight.io/mocks/morphosource/morphosource-api/61245152"
+        
         response = api.search_media()
         assert response is not None
         assert 'data' in response
@@ -54,6 +63,9 @@ class TestMorphoSourceAPI:
 
     def test_get_media(self, api):
         """Test retrieving individual media record"""
+        # Mock the API URL to use the mock server for testing
+        api.base_url = "https://stoplight.io/mocks/morphosource/morphosource-api/61245152"
+        
         # First get a media ID from search
         search_response = api.search_media({'limit': 1})
         assert search_response['data']
@@ -67,6 +79,9 @@ class TestMorphoSourceAPI:
 
     def test_get_physical_object(self, api):
         """Test retrieving physical object record"""
+        # Mock the API URL to use the mock server for testing
+        api.base_url = "https://stoplight.io/mocks/morphosource/morphosource-api/61245152"
+        
         # First get a physical object ID from media search
         search_response = api.search_media({'limit': 1})
         assert search_response['data']
@@ -82,10 +97,16 @@ class TestMorphoSourceAPI:
 
     def test_invalid_media_id(self, api):
         """Test error handling for invalid media ID"""
+        # Mock the API URL to use the mock server for testing
+        api.base_url = "https://stoplight.io/mocks/morphosource/morphosource-api/61245152"
+        
         with pytest.raises(requests.exceptions.HTTPError):
             api.get_media('invalid_id')
 
     def test_invalid_physical_object_id(self, api):
         """Test error handling for invalid physical object ID"""
+        # Mock the API URL to use the mock server for testing
+        api.base_url = "https://stoplight.io/mocks/morphosource/morphosource-api/61245152"
+        
         with pytest.raises(requests.exceptions.HTTPError):
             api.get_physical_object('invalid_id')
